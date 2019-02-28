@@ -1,0 +1,96 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+plugins {
+	id 'java-library'
+	id 'maven'
+}
+
+def getGitHash = { ->
+	def stdout = new ByteArrayOutputStream()
+	exec {
+		commandLine 'git', 'rev-parse', '--short', 'HEAD'
+		standardOutput = stdout
+	}
+	return stdout.toString().trim()
+}
+
+def buildDate = { ->
+	new Date().toString()
+}
+
+// format for snapshot versions is '1.4.10S' (S suffix)
+def simkitVersion = { ->
+	'1.4.10.SNAPSHOT'
+}
+
+// If this ever gets merged back into Arnie's repository,
+// this should change to reflect that.  For now it is necessary to
+// make jitpack work right (https://jitpack.io/docs/BUILDING/)
+group 'com.github.kastork'
+version simkitVersion.call()
+
+// TODO: put sources and tests where they belong so this block isn't necessary.
+sourceSets {
+	main {
+		java {
+			srcDirs = ['src']
+		}
+		resources {
+			srcDirs = ['src']
+		}
+	}
+	test {
+		java {
+			srcDirs = ['tests']
+		}
+		resources {
+			srcDirs = ['tests']
+		}
+	}
+}
+
+repositories {
+	jcenter()
+}
+
+dependencies {
+	testImplementation 'junit:junit:4.12'
+}
+
+task copyVersion(type: Copy) {
+	from('src/simkit/version.template') {
+		rename 'version.template', 'version.txt'
+		filter(ReplaceTokens,
+		       tokens: [
+				       version: simkitVersion.call() ,
+				       build  : getGitHash.call(),
+				       dtg: buildDate.call(),
+				       dtglocal: buildDate.call()
+		       ]
+		)
+	}
+	into 'build/resources/main/simkit'
+}
+
+compileJava.dependsOn('copyVersion')
+
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
+
+artifacts {
+	archives sourcesJar
+	archives javadocJar
+}
+
+wrapper {
+	gradleVersion = "5.1.1"
+	distributionType = Wrapper.DistributionType.ALL
+}
