@@ -3,6 +3,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 plugins {
 	id 'java-library'
 	id 'maven'
+	id 'pl.allegro.tech.build.axion-release' version '1.10.0'
 }
 
 def getGitHash = { ->
@@ -18,15 +19,18 @@ def buildDate = { ->
 	new Date().toString()
 }
 
-// format for snapshot versions is '1.4.10S' (S suffix)
-def simkitVersion = { ->
-	'1.4.10.SNAPSHOT'
-}
-
 // If this ever gets merged back into Arnie's repository,
 // this should change to reflect that.  For now it is necessary to
 // make jitpack work right (https://jitpack.io/docs/BUILDING/)
 group 'com.github.kastork'
+
+scmVersion {
+	tag {
+		prefix = 'RELEASE'
+	}
+}
+
+project.version = scmVersion.version
 
 // TODO: put sources and tests where they belong so this block isn't necessary.
 sourceSets {
@@ -61,7 +65,7 @@ task copyVersion(type: Copy) {
 		rename 'version.template', 'version.txt'
 		filter(ReplaceTokens,
 		       tokens: [
-				       version: simkitVersion.call() ,
+				       version: project.version,
 				       build  : getGitHash.call(),
 				       dtg: buildDate.call(),
 				       dtglocal: buildDate.call()
