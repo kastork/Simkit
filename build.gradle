@@ -27,7 +27,6 @@ def simkitVersion = { ->
 // this should change to reflect that.  For now it is necessary to
 // make jitpack work right (https://jitpack.io/docs/BUILDING/)
 group 'com.github.kastork'
-version simkitVersion.call()
 
 // TODO: put sources and tests where they belong so this block isn't necessary.
 sourceSets {
